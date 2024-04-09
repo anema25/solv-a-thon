@@ -1,0 +1,48 @@
+import pandas as pd
+import nltk
+from nltk.corpus import wordnet as wn
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import string
+
+# Download NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Function to extract synonyms from WordNet
+def get_synonyms(word):
+    synonyms = set()
+    for synset in wn.synsets(word):
+        for lemma in synset.lemmas():
+            synonyms.add(lemma.name())
+    return synonyms
+
+# Load CSV file
+df = pd.read_csv('/workspaces/solv-a-thon/modified_file (1).csv')
+
+# Preprocess text: tokenize, remove punctuation and stopwords
+def preprocess_text(text):
+    if isinstance(text, list):
+        tokens = text
+    else:
+        tokens = word_tokenize(text.lower())
+        tokens = [token for token in tokens if token not in stopwords.words('english')]
+        tokens = [token for token in tokens if token not in string.punctuation]
+    return tokens
+
+# Get input from user
+input_text = input("Enter a word or phrase: ")
+
+# Get synonyms for input text
+input_synonyms = get_synonyms(input_text)
+
+# Preprocess synonyms and "Research" column for comparison
+df['Research'] = df['Research'].apply(lambda x: preprocess_text(x))
+df['Research'] = df['Research'].apply(lambda x: set(x))
+
+# Compare input synonyms with values in "Research" column
+matched_rows = df[df['Research'].apply(lambda x: len(input_synonyms.intersection(x)) > 0)]
+
+# Print matched rows
+print("Matched rows in 'Research' column:")
+print(matched_rows)
